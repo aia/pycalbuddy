@@ -71,5 +71,6 @@ def update_event(
     location: str | None = None,
     notes: str | None = None,
     url: str | None = None,
+    target_calendar: str | None = None,
 ) -> None:
-    applescript.update_event(uid, calendar, title, start, end, location, notes, url)
+    applescript.update_event(uid, calendar, title, start, end, location, notes, url, target_calendar)

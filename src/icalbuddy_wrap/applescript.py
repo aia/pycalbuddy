@@ -42,7 +42,8 @@ def _run_osascript(script: str) -> str:
 
 
 def _format_datetime(value: _dt.datetime) -> str:
-    return value.strftime("%Y-%m-%d %H:%M:%S")
+    # AppleScript requires US locale format: "January 11, 2026 3:45:00 PM"
+    return value.strftime("%B %d, %Y %I:%M:%S %p")
 
 
 def build_add_script(
@@ -87,6 +88,7 @@ end tell
 def build_update_script(
     uid: str,
     calendar: str | None = None,
+    target_calendar: str | None = None,
     title: str | None = None,
     start: _dt.datetime | None = None,
     end: _dt.datetime | None = None,
@@ -113,16 +115,35 @@ def build_update_script(
         )
     if url is not None:
         updates.append(f'set url of targetEvent to "{escape_applescript_string(url)}"')
-    if calendar is not None:
+    if target_calendar is not None:
         updates.append(
-            f'set calendar of targetEvent to calendar "{escape_applescript_string(calendar)}"'
+            f'move targetEvent to calendar "{escape_applescript_string(target_calendar)}"'
         )
 
-    updates_body = "\n  ".join(updates) if updates else "-- no updates requested"
-    return f'''
+    updates_body = "\n    ".join(updates) if updates else "-- no updates requested"
+
+    if calendar:
+        # Search within specific calendar
+        return f'''
 tell application "Calendar"
-  set targetEvent to first event whose uid is "{escape_applescript_string(uid)}"
-  {updates_body}
+  tell calendar "{escape_applescript_string(calendar)}"
+    set targetEvent to (first event whose uid is "{escape_applescript_string(uid)}")
+    {updates_body}
+  end tell
+end tell
+'''.strip()
+    else:
+        # Search across all calendars
+        return f'''
+tell application "Calendar"
+  repeat with cal in calendars
+    try
+      set targetEvent to (first event of cal whose uid is "{escape_applescript_string(uid)}")
+      {updates_body}
+      return
+    end try
+  end repeat
+  error "Event not found with uid: {escape_applescript_string(uid)}"
 end tell
 '''.strip()
 
@@ -150,6 +171,7 @@ def update_event(
     location: str | None = None,
     notes: str | None = None,
     url: str | None = None,
+    target_calendar: str | None = None,
 ) -> None:
-    script = build_update_script(uid, calendar, title, start, end, location, notes, url)
+    script = build_update_script(uid, calendar, target_calendar, title, start, end, location, notes, url)
     _run_osascript(script)

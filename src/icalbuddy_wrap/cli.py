@@ -74,7 +74,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
     update = sub.add_parser("update", help="Update event")
     update.add_argument("--uid", required=True, help="Event UID")
-    update.add_argument("--calendar", help="New calendar name")
+    update.add_argument("--calendar", help="Calendar containing the event (speeds up search)")
+    update.add_argument("--move-to", dest="move_to", help="Move event to this calendar")
     update.add_argument("--title", help="New title")
     update.add_argument("--start", type=_parse_datetime, help="New start datetime ISO")
     update.add_argument("--end", type=_parse_datetime, help="New end datetime ISO")
@@ -132,6 +133,7 @@ def main(argv: list[str] | None = None) -> int:
             location=args.location,
             notes=args.notes,
             url=args.url,
+            target_calendar=args.move_to,
         )
         return 0
 

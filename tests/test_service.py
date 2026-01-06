@@ -25,7 +25,7 @@ def test_list_daily_calls_icalbuddy(monkeypatch):
 def test_update_event_delegates(monkeypatch):
     called = {}
 
-    def fake_update(uid, calendar, title, start, end, location, notes, url):
+    def fake_update(uid, calendar, title, start, end, location, notes, url, target_calendar):
         called["uid"] = uid
         called["calendar"] = calendar
         called["title"] = title
@@ -34,6 +34,7 @@ def test_update_event_delegates(monkeypatch):
         called["location"] = location
         called["notes"] = notes
         called["url"] = url
+        called["target_calendar"] = target_calendar
 
     monkeypatch.setattr(service.applescript, "update_event", fake_update)
     service.update_event(
@@ -45,10 +46,12 @@ def test_update_event_delegates(monkeypatch):
         location="Office",
         notes="note",
         url="https://example.com",
+        target_calendar="Home",
     )
 
     assert called["uid"] == "abc"
     assert called["calendar"] == "Work"
+    assert called["target_calendar"] == "Home"
 
 
 def test_list_weekly_span(monkeypatch):
