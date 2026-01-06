@@ -1,6 +1,6 @@
 import datetime as dt
 
-from icalbuddy_wrap import service
+from pycalbuddy import service
 
 
 def test_list_daily_calls_icalbuddy(monkeypatch):

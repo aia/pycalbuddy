@@ -1,8 +1,8 @@
 import datetime as dt
 import json
 
-from icalbuddy_wrap import cli
-from icalbuddy_wrap.models import Event
+from pycalbuddy import cli
+from pycalbuddy.models import Event
 
 
 def test_cli_daily_json(monkeypatch, capsys):
@@ -73,6 +73,46 @@ def test_cli_update_invokes_service(monkeypatch):
     assert code == 0
     assert called["uid"] == "abc"
     assert called["title"] == "New Title"
+
+
+def test_cli_add_all_day(monkeypatch):
+    captured = {}
+
+    def fake_add(**kwargs):
+        captured.update(kwargs)
+        return "uid-1"
+
+    monkeypatch.setattr(cli.service, "add_event", fake_add)
+    code = cli.main(
+        [
+            "add",
+            "--calendar",
+            "Work",
+            "--title",
+            "All-day",
+            "--start",
+            "2024-01-01T00:00:00",
+            "--end",
+            "2024-01-02T00:00:00",
+            "--all-day",
+        ]
+    )
+
+    assert code == 0
+    assert captured["all_day"] is True
+
+
+def test_cli_update_move_to(monkeypatch):
+    captured = {}
+
+    def fake_update(**kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr(cli.service, "update_event", fake_update)
+    code = cli.main(["update", "--uid", "abc", "--move-to", "Home"])
+
+    assert code == 0
+    assert captured["target_calendar"] == "Home"
 
 
 def test_print_events_human_format(capsys):

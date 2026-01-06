@@ -1,7 +1,7 @@
 import datetime as dt
 
-from icalbuddy_wrap import icalbuddy
-from icalbuddy_wrap.icalbuddy import _merge_uids, _parse_sc_uid_output
+from pycalbuddy import icalbuddy
+from pycalbuddy.icalbuddy import _merge_uids, _parse_sc_uid_output
 
 
 def test_parse_events_output_handles_notes_and_all_day():
@@ -133,6 +133,24 @@ def test_parse_sc_uid_output_handles_plain_title_and_date(monkeypatch):
     timed = events[1]
     assert timed.uid == "uid-time"
     assert timed.start.hour == 9
+
+
+def test_parse_sc_uid_output_handles_multi_day_span():
+    sc_output = (
+        "Work:\n"
+        "------------------------\n"
+        "Conference\n"
+        "    2026-01-09 - 2026-01-11\n"
+        "    uid: uid-span\n"
+    )
+
+    events = _parse_sc_uid_output(sc_output)
+    assert len(events) == 1
+    evt = events[0]
+    assert evt.uid == "uid-span"
+    assert evt.all_day is True
+    assert evt.start is not None
+    assert evt.end is not None
 
 
 def test_parse_default_format_multiline():

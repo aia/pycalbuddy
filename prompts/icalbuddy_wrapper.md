@@ -14,7 +14,7 @@ Deliverables:
 
 Project layout (create this):
 - pyproject.toml (uv-compatible)
-- src/icalbuddy_wrap/
+- src/pycalbuddy/
     __init__.py
     models.py
     icalbuddy.py
@@ -94,7 +94,7 @@ Create `Event` as a dataclass in models.py:
 
 Implementation details:
 
-1) Reading/listing with icalBuddy (src/icalbuddy_wrap/icalbuddy.py):
+1) Reading/listing with icalBuddy (src/pycalbuddy/icalbuddy.py):
 - Use `subprocess.run(..., check=True, capture_output=True, text=True)`
 - Build robust command lines:
   - Daily: use `eventsFrom:START to:END` where START is date at 00:00:00 and END is date at 23:59:59 (or next day 00:00:00 depending on icalBuddy behavior) and ensure timezone is local.
@@ -107,7 +107,7 @@ Implementation details:
 - Implement a parser that converts the delimited output into `Event` objects.
 - Support calendar filtering using include/exclude calendars flags if available; otherwise filter in Python.
 
-2) Writing/updating with AppleScript (src/icalbuddy_wrap/applescript.py):
+2) Writing/updating with AppleScript (src/pycalbuddy/applescript.py):
 - Implement `osascript` execution helper that takes an AppleScript string and returns stdout.
 - Add event AppleScript:
   - `tell application "Calendar" ... tell calendar "<name>" ... make new event ... set uidVar to uid of newEvent ... return uidVar`
@@ -117,12 +117,12 @@ Implementation details:
   - Allow (optional) calendar change: if calendar parameter is provided, move/duplicate event into specified calendar carefully (or document limitations and keep same-calendar update only if moving is too complex).
 - Be careful with quoting/escaping user strings (title/location/notes/url). Implement a safe AppleScript string escaping function.
 
-3) Service layer (src/icalbuddy_wrap/service.py):
+3) Service layer (src/pycalbuddy/service.py):
 - Expose the four library functions calling into icalbuddy.py and applescript.py.
 - Handle timezone/local conversion using standard library `zoneinfo` and clearly document assumptions.
 
-4) CLI (src/icalbuddy_wrap/cli.py):
-- Provide a console script `icalbuddy-wrap` with subcommands:
+4) CLI (src/pycalbuddy/cli.py):
+- Provide a console script `pycalbuddy` with subcommands:
   - `daily [--date YYYY-MM-DD] [--calendar NAME ...] [--no-all-day] [--json]`
   - `weekly [--start YYYY-MM-DD] [--days N] [--calendar NAME ...] [--no-all-day] [--json]`
   - `add --calendar NAME --title TITLE --start ISO --end ISO [--location ...] [--notes ...] [--url ...] [--all-day]`
@@ -141,7 +141,7 @@ Testing requirements (pytest):
 
 Coverage:
 - Add pytest-cov and configure:
-  - `uv run pytest --cov=icalbuddy_wrap --cov-report=term-missing`
+  - `uv run pytest --cov=pycalbuddy --cov-report=term-missing`
 - Fail tests if coverage < 90% (configure via pytest.ini or pyproject).
 
 README:
@@ -153,8 +153,8 @@ README:
 
 Acceptance checklist (you must satisfy):
 - `uv run pytest` passes
-- `uv run pytest --cov=icalbuddy_wrap --cov-report=term-missing` passes with >=90%
-- `uv run icalbuddy-wrap daily --json` works (mocked in tests; real usage documented)
+- `uv run pytest --cov=pycalbuddy --cov-report=term-missing` passes with >=90%
+- `uv run pycalbuddy daily --json` works (mocked in tests; real usage documented)
 
 Start now by scaffolding the project, then implement the library, then CLI, then tests, then README.
 

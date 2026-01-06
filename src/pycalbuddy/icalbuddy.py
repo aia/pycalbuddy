@@ -33,7 +33,7 @@ UID_IN_TITLE = re.compile(r"[\[(]uid[:=]\s*([^\]\)]+)[\])]", re.IGNORECASE)
 
 def _ensure_macos() -> None:
     if sys.platform != "darwin":
-        raise RuntimeError("icalbuddy-wrap only works on macOS.")
+        raise RuntimeError("pycalbuddy only works on macOS.")
 
 
 def _find_icalbuddy() -> str:
@@ -638,7 +638,11 @@ def list_events(
 ) -> list[Event]:
     _ensure_macos()
     command = _build_command(start, end, calendars)
-    debug = os.getenv("ICALBUDDY_WRAP_DEBUG")
+    debug = (
+        os.getenv("PYCALBUDDY_DEBUG")
+        or os.getenv("PYCALLBUDDY_DEBUG")
+        or os.getenv("ICALBUDDY_WRAP_DEBUG")
+    )
     try:
         result = subprocess.run(
             command,
@@ -657,10 +661,10 @@ def list_events(
         raise RuntimeError(f"icalBuddy failed: {stderr.strip()}") from exc
 
     if debug:  # pragma: no cover - debug-only branch
-        sys.stderr.write(f"[icalbuddy-wrap] Command: {' '.join(command)}\n")
-        sys.stderr.write(f"[icalbuddy-wrap] STDOUT:\n{result.stdout}\n")
+        sys.stderr.write(f"[pycalbuddy] Command: {' '.join(command)}\n")
+        sys.stderr.write(f"[pycalbuddy] STDOUT:\n{result.stdout}\n")
         if result.stderr:
-            sys.stderr.write(f"[icalbuddy-wrap] STDERR:\n{result.stderr}\n")
+            sys.stderr.write(f"[pycalbuddy] STDERR:\n{result.stderr}\n")
 
     events = parse_events_output(result.stdout)
     if any(evt.uid is None for evt in events):
@@ -673,8 +677,8 @@ def list_events(
                 text=True,
             )
             if debug:  # pragma: no cover - debug-only branch
-                sys.stderr.write(f"[icalbuddy-wrap] UID lookup command: {' '.join(fallback_cmd)}\n")
-                sys.stderr.write(f"[icalbuddy-wrap] UID lookup STDOUT:\n{fallback_result.stdout}\n")
+                sys.stderr.write(f"[pycalbuddy] UID lookup command: {' '.join(fallback_cmd)}\n")
+                sys.stderr.write(f"[pycalbuddy] UID lookup STDOUT:\n{fallback_result.stdout}\n")
             fallback_events = parse_events_output(fallback_result.stdout)
             events = _merge_uids(events, fallback_events)
             if any(evt.uid is None for evt in events):
@@ -686,8 +690,8 @@ def list_events(
                     text=True,
                 )
                 if debug:  # pragma: no cover - debug-only branch
-                    sys.stderr.write(f"[icalbuddy-wrap] UID plain command: {' '.join(plain_cmd)}\n")
-                    sys.stderr.write(f"[icalbuddy-wrap] UID plain STDOUT:\n{plain_result.stdout}\n")
+                    sys.stderr.write(f"[pycalbuddy] UID plain command: {' '.join(plain_cmd)}\n")
+                    sys.stderr.write(f"[pycalbuddy] UID plain STDOUT:\n{plain_result.stdout}\n")
                 plain_events = parse_events_output(plain_result.stdout)
                 events = _merge_uids(events, plain_events)
             if any(evt.uid is None for evt in events):
@@ -699,8 +703,8 @@ def list_events(
                     text=True,
                 )
                 if debug:  # pragma: no cover - debug-only branch
-                    sys.stderr.write(f"[icalbuddy-wrap] UID text command: {' '.join(text_cmd)}\n")
-                    sys.stderr.write(f"[icalbuddy-wrap] UID text STDOUT:\n{text_result.stdout}\n")
+                    sys.stderr.write(f"[pycalbuddy] UID text command: {' '.join(text_cmd)}\n")
+                    sys.stderr.write(f"[pycalbuddy] UID text STDOUT:\n{text_result.stdout}\n")
                 text_events = parse_events_output(text_result.stdout)
                 events = _merge_uids(events, text_events)
             if any(evt.uid is None for evt in events):
@@ -712,14 +716,14 @@ def list_events(
                     text=True,
                 )
                 if debug:  # pragma: no cover - debug-only branch
-                    sys.stderr.write(f"[icalbuddy-wrap] UID sc command: {' '.join(sc_cmd)}\n")
-                    sys.stderr.write(f"[icalbuddy-wrap] UID sc STDOUT:\n{sc_result.stdout}\n")
+                    sys.stderr.write(f"[pycalbuddy] UID sc command: {' '.join(sc_cmd)}\n")
+                    sys.stderr.write(f"[pycalbuddy] UID sc STDOUT:\n{sc_result.stdout}\n")
                 sc_events = _parse_sc_uid_output(sc_result.stdout)
                 events = _merge_uids(events, sc_events)
         except Exception:
             # Best-effort; ignore failures and return what we have.
             if debug:  # pragma: no cover - debug-only branch
-                sys.stderr.write("[icalbuddy-wrap] UID lookup failed; continuing without UIDs\n")
+                sys.stderr.write("[pycalbuddy] UID lookup failed; continuing without UIDs\n")
 
     if not include_all_day:
         events = [evt for evt in events if not evt.all_day]

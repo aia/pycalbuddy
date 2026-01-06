@@ -1,5 +1,5 @@
 """
-icalbuddy_wrap - small wrapper around icalBuddy and AppleScript for macOS Calendar access.
+pycalbuddy - small wrapper around icalBuddy and AppleScript for macOS Calendar access.
 """
 
 from .models import Event

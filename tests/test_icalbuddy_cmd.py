@@ -1,7 +1,7 @@
 import datetime as dt
 from types import SimpleNamespace
 
-from icalbuddy_wrap import icalbuddy
+from pycalbuddy import icalbuddy
 
 
 def test_builds_expected_command(monkeypatch):
@@ -58,7 +58,7 @@ def test_filters_all_day(monkeypatch):
 def test_debug_output_and_default_format(monkeypatch, capsys):
     import datetime as dt
 
-    monkeypatch.setenv("ICALBUDDY_WRAP_DEBUG", "1")
+    monkeypatch.setenv("PYCALBUDDY_DEBUG", "1")
     monkeypatch.setattr(icalbuddy.sys, "platform", "darwin")
     monkeypatch.setattr(icalbuddy.shutil, "which", lambda name: "/usr/local/bin/icalBuddy")
 
@@ -74,7 +74,7 @@ def test_debug_output_and_default_format(monkeypatch, capsys):
     events = icalbuddy.list_events(start, end)
 
     err = capsys.readouterr().err
-    assert "[icalbuddy-wrap] Command" in err
+    assert "[pycalbuddy] Command" in err
     assert events[0].uid == "uid-xyz"
     assert events[0].start.date() == dt.date(2024, 3, 1)
 

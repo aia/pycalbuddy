@@ -1,7 +1,7 @@
 import datetime as dt
 from types import SimpleNamespace
 
-from icalbuddy_wrap import applescript
+from pycalbuddy import applescript
 
 
 def test_escape_applescript_string():
@@ -92,3 +92,11 @@ def test_build_add_script_includes_optional_fields():
     assert "description" in script
     assert "url" in script
     assert "allday event:true" in script
+
+
+def test_build_update_script_move_to():
+    script = applescript.build_update_script(
+        uid="abc123",
+        target_calendar="Archive",
+    )
+    assert 'move targetEvent to calendar "Archive"' in script
