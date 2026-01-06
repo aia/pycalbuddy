@@ -473,105 +473,83 @@ def _merge_uids(primary: list[Event], fallback: list[Event]) -> list[Event]:
     return primary
 
 
+def _is_sc_metadata_line(line: str) -> bool:
+    """Check if line is metadata (uid, date, time, property) rather than an event title."""
+    lower = line.lower()
+    if lower.startswith(("uid:", "location:", "notes:", "url:", "attendees:", "organizer:")):
+        return True
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", line):
+        return True
+    if " at " in line and " - " in line:
+        return True
+    if " - " in line and re.match(r"\d{4}-\d{2}-\d{2}", line):
+        return True
+    return False
+
+
 def _parse_sc_uid_output(output: str) -> list[Event]:
     events: list[Event] = []
     current_calendar: str | None = None
     current_event: Event | None = None
     tzinfo = _local_tz()
-    # Property lines to skip (they're not event titles)
-    property_prefixes = ("location:", "notes:", "url:", "attendees:", "organizer:")
+
     for raw in output.splitlines():
         line = raw.strip()
-        if not line:
+        if not line or line == "------------------------":
             continue
-        if line == "------------------------":
-            continue
+
+        # Calendar header
         if line.endswith(":") and not line.startswith("•"):
             current_calendar = line.rstrip(":")
             continue
-        if line.startswith("•"):
+
+        # Event title (with or without bullet)
+        if line.startswith("•") or (current_calendar and not _is_sc_metadata_line(line)):
             title = line.lstrip("•").strip()
             current_event = Event(
-                uid=None,
-                calendar=current_calendar,
-                title=title,
-                start=None,
-                end=None,
-                all_day=False,
-                location=None,
-                notes=None,
-                url=None,
+                uid=None, calendar=current_calendar, title=title,
+                start=None, end=None, all_day=False,
+                location=None, notes=None, url=None,
             )
             events.append(current_event)
             continue
-        # Skip property lines - they're not event titles
-        if line.lower().startswith(property_prefixes):
+
+        if not current_event:
             continue
-        if (
-            current_calendar
-            and not line.lower().startswith("uid:")
-            and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", line)
-            and not (" at " in line and " - " in line)
-            and not (" - " in line and re.match(r"\d{4}-\d{2}-\d{2}", line))
-        ):
-            # Plain title line (sc output sometimes omits bullets)
-            current_event = Event(
-                uid=None,
-                calendar=current_calendar,
-                title=line,
-                start=None,
-                end=None,
-                all_day=False,
-                location=None,
-                notes=None,
-                url=None,
-            )
-            events.append(current_event)
-            continue
-        if current_event and line.lower().startswith("uid:"):
+
+        # UID
+        if line.lower().startswith("uid:"):
             current_event.uid = line.split(":", 1)[1].strip()
-            continue
-        if current_event and " - " in line and not line.lower().startswith("uid:"):
-            # All-day date range, e.g. 2026-01-09 - 2026-01-11
-            parts = line.split(" - ", 1)
-            if len(parts) == 2:
-                try:
-                    start_date = _dt.date.fromisoformat(parts[0])
-                    end_date = _dt.date.fromisoformat(parts[1])
-                except ValueError:
-                    start_date = end_date = None
-                if start_date and end_date:
-                    start = _dt.datetime.combine(start_date, _dt.time.min).replace(tzinfo=tzinfo)
-                    end = _dt.datetime.combine(end_date, _dt.time.max).replace(tzinfo=tzinfo)
-                    current_event.start = start
-                    current_event.end = end
-                    current_event.all_day = True
-                    continue
-        if current_event and " at " in line and " - " in line:
-            # Timed event, e.g. 2026-01-06 at 16:00 - 17:00
+        # Timed event: 2026-01-06 at 16:00 - 17:00
+        elif " at " in line and " - " in line:
             try:
                 date_part, times_part = line.split(" at ", 1)
                 start_str, end_str = times_part.split(" - ", 1)
                 date = _dt.date.fromisoformat(date_part)
-                start_dt = _dt.datetime.combine(date, _dt.time.fromisoformat(start_str)).replace(tzinfo=tzinfo)
-                end_dt = _dt.datetime.combine(date, _dt.time.fromisoformat(end_str)).replace(tzinfo=tzinfo)
-                current_event.start = start_dt
-                current_event.end = end_dt
-                current_event.all_day = False
+                current_event.start = _dt.datetime.combine(date, _dt.time.fromisoformat(start_str)).replace(tzinfo=tzinfo)
+                current_event.end = _dt.datetime.combine(date, _dt.time.fromisoformat(end_str)).replace(tzinfo=tzinfo)
             except Exception:
                 pass
-            continue
-        if current_event and re.fullmatch(r"\d{4}-\d{2}-\d{2}", line):
-            # Treat as all-day date
+        # Multi-day: 2026-01-09 - 2026-01-11
+        elif " - " in line:
+            try:
+                start_date = _dt.date.fromisoformat(line.split(" - ")[0])
+                end_date = _dt.date.fromisoformat(line.split(" - ")[1])
+                current_event.start = _dt.datetime.combine(start_date, _dt.time.min).replace(tzinfo=tzinfo)
+                current_event.end = _dt.datetime.combine(end_date, _dt.time.max).replace(tzinfo=tzinfo)
+                current_event.all_day = True
+            except Exception:
+                pass
+        # Single all-day: 2026-01-05
+        elif re.fullmatch(r"\d{4}-\d{2}-\d{2}", line):
             try:
                 date = _dt.date.fromisoformat(line)
-            except ValueError:
-                continue
-            start = _dt.datetime.combine(date, _dt.time.min).replace(tzinfo=tzinfo)
-            end = start + _dt.timedelta(days=1) - _dt.timedelta(seconds=1)
-            current_event.start = start
-            current_event.end = end
-            current_event.all_day = True
+                current_event.start = _dt.datetime.combine(date, _dt.time.min).replace(tzinfo=tzinfo)
+                current_event.end = current_event.start + _dt.timedelta(days=1) - _dt.timedelta(seconds=1)
+                current_event.all_day = True
+            except Exception:
+                pass
+
     return events
 
 
