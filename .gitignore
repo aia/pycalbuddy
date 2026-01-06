@@ -1,0 +1,27 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.python-version
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Tooling caches
+.cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
