@@ -15,4 +15,4 @@
 - Python: 3.11+ (CI runs 3.11 and 3.12)
 - Package manager: `uv`
 - Test runner: `pytest`
-- Runtime deps (macOS only): `icalBuddy`, `osascript`
+- Runtime deps (macOS only): `pyobjc-framework-EventKit`

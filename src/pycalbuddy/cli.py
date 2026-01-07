@@ -46,7 +46,7 @@ def _print_events(events: list[Event], json_output: bool) -> None:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="pycalbuddy", description="icalBuddy wrapper for Calendar")
+    parser = argparse.ArgumentParser(prog="pycalbuddy", description="EventKit wrapper for Calendar")
     sub = parser.add_subparsers(dest="command", required=True)
 
     daily = sub.add_parser("daily", help="List daily events")
