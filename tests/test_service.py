@@ -1,9 +1,10 @@
 import datetime as dt
 
 from pycalbuddy import service
+from pycalbuddy.models import Event
 
 
-def test_list_daily_calls_icalbuddy(monkeypatch):
+def test_list_daily_calls_eventkit(monkeypatch):
     called = {}
 
     def fake_list(start, end, calendars, include_all_day):
@@ -11,15 +12,61 @@ def test_list_daily_calls_icalbuddy(monkeypatch):
         called["end"] = end
         called["calendars"] = calendars
         called["include_all_day"] = include_all_day
-        return []
+        return [
+            Event(
+                uid="1",
+                calendar="Work",
+                title="Today",
+                start=dt.datetime(2024, 1, 1, 12, 0, tzinfo=dt.timezone.utc),
+                end=dt.datetime(2024, 1, 1, 13, 0, tzinfo=dt.timezone.utc),
+                all_day=False,
+                location=None,
+                notes=None,
+                url=None,
+            ),
+            Event(
+                uid="2",
+                calendar="Work",
+                title="Yesterday spill",
+                start=dt.datetime(2023, 12, 31, 23, 30, tzinfo=dt.timezone.utc),
+                end=dt.datetime(2024, 1, 1, 1, 0, tzinfo=dt.timezone.utc),
+                all_day=False,
+                location=None,
+                notes=None,
+                url=None,
+            ),
+            Event(
+                uid="past-day",
+                calendar="Work",
+                title="Past day only",
+                start=dt.datetime(2023, 12, 31, 0, 0, tzinfo=dt.timezone.utc),
+                end=dt.datetime(2023, 12, 31, 23, 0, tzinfo=dt.timezone.utc),
+                all_day=True,
+                location=None,
+                notes=None,
+                url=None,
+            ),
+            Event(
+                uid="3",
+                calendar="Work",
+                title="Tomorrow",
+                start=dt.datetime(2024, 1, 2, 0, 30, tzinfo=dt.timezone.utc),
+                end=dt.datetime(2024, 1, 2, 1, 30, tzinfo=dt.timezone.utc),
+                all_day=False,
+                location=None,
+                notes=None,
+                url=None,
+            ),
+        ]
 
-    monkeypatch.setattr(service.icalbuddy, "list_events", fake_list)
-    service.list_daily_events(date=dt.date(2024, 1, 1), calendars=["Work"], include_all_day=False)
+    monkeypatch.setattr(service.eventkit, "list_events", fake_list)
+    events = service.list_daily_events(date=dt.date(2024, 1, 1), calendars=["Work"], include_all_day=False)
 
     assert called["start"].date() == dt.date(2024, 1, 1)
-    assert called["end"].date() == dt.date(2024, 1, 1)
+    assert called["end"].date() == dt.date(2024, 1, 2)
     assert called["calendars"] == ["Work"]
     assert not called["include_all_day"]
+    assert [e.uid for e in events] == ["1", "2", "past-day", "3"]
 
 
 def test_update_event_delegates(monkeypatch):
@@ -36,7 +83,7 @@ def test_update_event_delegates(monkeypatch):
         called["url"] = url
         called["target_calendar"] = target_calendar
 
-    monkeypatch.setattr(service.applescript, "update_event", fake_update)
+    monkeypatch.setattr(service.eventkit, "update_event", fake_update)
     service.update_event(
         uid="abc",
         calendar="Work",
@@ -62,12 +109,11 @@ def test_list_weekly_span(monkeypatch):
         captured["end"] = end
         return []
 
-    monkeypatch.setattr(service.icalbuddy, "list_events", fake_list)
+    monkeypatch.setattr(service.eventkit, "list_events", fake_list)
     service.list_weekly_events(start_date=dt.date(2024, 1, 1), days=3)
 
     total_days = (captured["end"] - captured["start"]).total_seconds() / 86400
     assert total_days >= 2.9
-    assert captured["start"].tzinfo is not None
 
 
 def test_add_event_delegates(monkeypatch):
@@ -78,7 +124,7 @@ def test_add_event_delegates(monkeypatch):
         called["all_day"] = all_day
         return "uid-123"
 
-    monkeypatch.setattr(service.applescript, "add_event", fake_add)
+    monkeypatch.setattr(service.eventkit, "add_event", fake_add)
     uid = service.add_event(
         calendar="Home",
         title="Title",

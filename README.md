@@ -1,6 +1,6 @@
 # pycalbuddy
 
-Small macOS-only wrapper around `icalBuddy` (read/list) and AppleScript via `osascript` (write/update) for Calendar events.
+Small macOS-only wrapper around EventKit (via `pyobjc-framework-EventKit`) for listing and updating Calendar events without any external binaries.
 
 ## Installation
 
@@ -8,9 +8,8 @@ Small macOS-only wrapper around `icalBuddy` (read/list) and AppleScript via `osa
 uv sync
 ```
 
-Runtime dependencies are only the macOS binaries:
-- `icalBuddy` (install with Homebrew: `brew install ical-buddy`)
-- `osascript` (bundled with macOS)
+Runtime dependency:
+- macOS EventKit (provided by the OS, surfaced through `pyobjc-framework-EventKit`; installed automatically on macOS)
 
 Grant Calendar permissions to the calling terminal/app in **System Settings → Privacy & Security → Automation/Calendars** if commands are denied.
 
@@ -26,7 +25,6 @@ uv run pycalbuddy update --uid ABC123 --move-to Archive
 ```
 
 Use `--json` on listing commands for machine-readable output. Add `--calendar NAME` multiple times to filter specific calendars. `--no-all-day` excludes all-day entries.
-Set `PYCALBUDDY_DEBUG=1` to print the underlying icalBuddy commands and raw output for troubleshooting.
 
 ## Library usage
 

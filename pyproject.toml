@@ -1,10 +1,10 @@
 [project]
 name = "pycalbuddy"
-version = "0.1.0"
+version = "0.1.5"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["pyobjc-framework-EventKit; platform_system == 'Darwin'"]
 readme = "README.md"
-description = "Thin wrapper around icalBuddy and AppleScript for macOS Calendar access."
+description = "Thin EventKit wrapper for macOS Calendar access."
 authors = [{ name = "Artem Veremey" }]
 license = { text = "MIT" }
 
